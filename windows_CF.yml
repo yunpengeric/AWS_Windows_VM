@@ -1,0 +1,53 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Create a Windows 2019 box in Sydney Region
+
+Parameters:
+  KeyName:
+    Description: Name of KeyPair
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: Provide the name of an existing SSH key pair
+  VolumeSize:
+    Description: Volume Size
+    Type: Number
+    ConstraintDescription: Provide the Volume Size(in GiBs)
+
+Resources:
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: !Ref VolumeSize
+            Encrypted: true
+      InstanceType: t2.micro
+      ImageId: ami-030bf0fa163eee558
+      HibernationOptions:
+        Configured: true
+      KeyName: !Ref KeyName
+      SecurityGroups: 
+      - Ref: InstanceSecurityGroup
+      Tags:
+        - Key: Environment
+          Value: non-production
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable RDP access via port 3389
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 3389
+        ToPort: 3389
+        CidrIp: 0.0.0.0/0
+  MyElasticIp:
+    Type: AWS::EC2::EIP
+    Properties:
+      InstanceId: !Ref MyEC2Instance
+Outputs:
+  InstanceID:
+    Description: The Instance ID
+    Value: !Ref MyEC2Instance
+  PublicIP:
+    Description: The Public IP Address of the Instance.
+    Value: !GetAtt MyEC2Instance.PublicIp
